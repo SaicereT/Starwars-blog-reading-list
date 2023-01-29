@@ -1,45 +1,76 @@
+import { Await } from "react-router";
+
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
+			planets:[],
+			films:[],
+			people:[],
+			species:[],
+			starships:[],
+			vehicles:[],
+			favorites:[],
 		},
 		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
-			loadSomeData: () => {
-				/**
-					fetch().then().then(data => setStore({ "foo": data.bar }))
-				*/
-			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
+			getStarWarsInfo:async(resource, id=0)=>{
+				let resp = await fetch("https://www.swapi.tech/api/"+ resource)
+				if (!resp.ok){
+					console.error(resp.status + ": " + resp.statusText)
+					return
+				}
+				let data= await resp.json()
+				let newStore = {...getStore()}
+				newStore [resource]=data.result || data.results
+				setStore(newStore)
+			},
 
-				//reset the global store
-				setStore({ demo: demo });
+			getStarWarsDetails: async(resource, id)=>{
+				let resp = await fetch (`https://www.swapi.tech/api/${resource}/${id}`)
+				if (!resp.ok){
+					console.error(`Error: ${resp.status}: ${resp.statusText}`)
+					return
+				}
+				let data = await resp.json()
+				return {
+					...data.result.properties
+				}
+			},
+			addFavorite:(element)=>{
+				let currentStore=getStore()
+				setStore({
+					...currentStore,
+					favorites:[...currentStore.favorites, element]
+				})
+			},
+			removeFavorite:(index)=>{
+				let currentStore=getStore()
+				let newFavorites=[...currentStore.favorites]
+				newFavorites.splice(index,1)
+				setStore({
+					...currentStore,
+					favorites:newFavorites
+				})
+			},
+			handleFavorite:(data) => {
+				let currentStore=getStore()
+				let favoriteIndex=currentStore.favorites.findIndex(fav=>fav.link==data.link)
+				if (favoriteIndex==-1){
+					setStore({
+						...currentStore,
+						favorites:[...currentStore.favorites, data]
+					})
+			  }else{
+				let newFavorites=[...currentStore.favorites]
+				newFavorites.splice(favoriteIndex,1)
+				setStore({
+					...currentStore,
+					favorites: newFavorites
+				})
+			  }
+			  }
 			}
 		}
 	};
-};
 
 export default getState;
